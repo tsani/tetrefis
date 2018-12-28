@@ -1,3 +1,5 @@
-BOOTX64.EFI
+*.efi
 *.img
 *.o
+/ovmf/
+/mnt/
