@@ -1,53 +1,14 @@
 #include <efi.h>
 #include <efilib.h>
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#include "screen.h"
+#include "tetris.h"
 
-typedef struct bgr {
-  UINT8 blue;
-  UINT8 green;
-  UINT8 red;
-  UINT8 unused;
-} bgr;
-
-bgr WHITE = {
-  .blue = 255,
-  .green = 255,
-  .red = 255,
-  .unused = 0
-};
-
-typedef struct rect {
-  UINT32 x;
-  UINT32 y;
-  UINT32 w;
-  UINT32 h;
-} rect;
-
-// base address of the linear frame buffer
-bgr *LFB;
-UINTN LFB_SIZE;
-UINTN PIXELS_PER_SCANLINE;
-
-void set_pixel(UINT32 x, UINT32 y, bgr p) {
-  LFB[x + SCREEN_WIDTH * y] = p;
-}
-
-void fill_rect(rect rect, bgr color) {
-  UINT32 x0 = rect.x, y0 = rect.y;
-  for(UINT32 x = x0; x < x0 + rect.w; x++) {
-    for(UINT32 y = y0; y < y0 + rect.h; y++) {
-      set_pixel(x, y, color);
-    }
-  }
-}
-
-void await_key() {
-  EFI_STATUS status;
-  EFI_INPUT_KEY key;
-  while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY) ;
-}
+// void await_key() {
+//   EFI_STATUS status;
+//   EFI_INPUT_KEY key;
+//   while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY) ;
+// }
 
 int
 mode_is_suitable(EFI_GRAPHICS_OUTPUT_MODE_INFORMATION const * const info) {
@@ -80,58 +41,89 @@ find_and_set_video_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL * const gop) {
 
   return EFI_NOT_FOUND;
 }
- 
-EFI_STATUS
-efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
-{
-  EFI_STATUS status;
-  // EFI_INPUT_KEY key;
+
+/**
+ * \brief
+ * Prepares the linear frame buffer by finding the GOP and setting the
+ * video mode.
+ *
+ * Unconditionally sets *_status. The return value is undefined if
+ * EFI_ERROR(*_status) is true.
+ */
+LFB
+load_lfb(EFI_STATUS * status) {
   EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
   EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
-  
-  InitializeLib(image_handle, system_table);
-  
-  Print(L"Hello world!\n");
-  
+
   if(EFI_ERROR(
-       (status =
+       (*status =
        ST->BootServices->LocateProtocol(
          &gop_guid,
          NULL,
          (void**)&gop)))) {
     Print(L"FATAL: failed to locate GOP.\n");
-    return status;
+    return (LFB) {};
   }
      
   Print(L"Framebuffer base is at %lx\n", gop->Mode->FrameBufferBase);
   Print(L"Finding a suitable video mode; preferred resolution: 640x480.\n");
 
-  if(EFI_ERROR((status = find_and_set_video_mode(gop))))
+  if(EFI_ERROR((*status = find_and_set_video_mode(gop))))
+    return (LFB) {};
+
+  *status = EFI_SUCCESS;
+  return (LFB) {
+    .pixels = (bgr*) gop->Mode->FrameBufferBase,
+    .width = gop->Mode->Info->HorizontalResolution,
+    .height = gop->Mode->Info->VerticalResolution,
+    .pixels_per_scanline = gop->Mode->Info->PixelsPerScanLine
+  };
+}
+
+RNG
+load_rng(EFI_STATUS * status) {
+  EFI_RNG_PROTOCOL *rngp;
+  EFI_GUID rngp_guid = EFI_RNG_PROTOCOL_GUID;
+  
+  
+  if(EFI_ERROR(
+       (*status =
+       ST->BootServices->LocateProtocol(
+         &rngp_guid,
+         NULL,
+         (void**)&rngp)))) {
+    Print(L"FATAL: failed to locate RNG protocol.\n");
+    return (RNG) {};
+  }
+
+  *status = EFI_SUCCESS;
+  return (RNG) {
+    .protocol = rngp
+  };
+}
+ 
+EFI_STATUS
+efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
+{
+  EFI_STATUS status;
+
+  InitializeLib(image_handle, system_table);
+  Print(L"Welcome to tetrEFIs!\n");
+
+  LFB lfb = load_lfb(&status);
+  if(EFI_ERROR(status))
     return status;
 
-  LFB = (bgr*) gop->Mode->FrameBufferBase;
-  LFB_SIZE = gop->Mode->FrameBufferSize;
+  RNG rng = load_rng(&status);
+  if(EFI_ERROR(status))
+    return status;
 
-  fill_rect((rect) { .x = 0, .y = 0, .w = 640, .h = 480 }, WHITE);
-     
-     // /* Say hi */
-     // Status = ST->ConOut->OutputString(ST->ConOut, L"Hello World\n\r");
-     // if (EFI_ERROR(Status))
-     //     return Status;
-     
-     // /* Now wait for a keystroke before continuing, otherwise your
-     //    message will flash off the screen before you see it.
-     
-     //    First, we need to empty the console input buffer to flush
-     //    out any keystrokes entered before this point */
-     // Status = ST->ConIn->Reset(ST->ConIn, FALSE);
-     // if (EFI_ERROR(Status))
-     //     return Status;
-     
-     // /* Now wait until a key becomes available.  This is a simple
-     //    polling implementation.  You could try and use the WaitForKey
-     //    event instead if you like */
-     // while ((Status = ST->ConIn->ReadKeyStroke(ST->ConIn, &Key)) == EFI_NOT_READY) ;
-     
-  return status;
+  game_state s = make_initial_state(&lfb, &rng);
+
+  // TODO disable the watchdog timer
+
+  // not sure if RNG will continue to work after exiting boot services
+  // (probably not)
+  // ST->BootServices->ExitBootServices();
+  return game(&s);
 }

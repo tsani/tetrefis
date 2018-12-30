@@ -22,14 +22,11 @@ EFI_CRT_OBJ=/usr/lib/crt0-efi-x86_64.o
 EFI_LDS=/usr/lib/elf_x86_64_efi.lds
 
 # linker flags for building EFI application:
-# - We don't link in the C library.
-# - An EFI application is built as a shared object, and uses efi_main as
-#   its entry point.
-# - subsystem 10 is for EFI application
-# - We need to use the absolute path to libgnuefi.a since -l will look
-#   in the ldpath for the *cross*-compiler, which doesn't have gnu-efi
-#   installed. But luckily this library is portable since it doesn't
-#   have any dependencies.
+# - We don't link in the standard library
+# - We don't combine relocations
+# - We use the custom ld script provided by gnu-efi
+# - we build a shared object file
+# - I don't really understand -Bsymbolic
 EFI_LDFLAGS=\
 	-nostdlib \
 	-znocombreloc \
@@ -39,33 +36,36 @@ EFI_LDFLAGS=\
 	-L/usr/lib
 
 # Sizes are in KiB
-DISKSIZE=60000
+DISKSIZE=60000 # ~60 MiB
 
 # The complete disk image.
 $(DISK): tetris.efi base-$(DISK).img layout.sfdisk
 	cp -u base-$(DISK).img $@
-	sfdisk $@ < layout.sfdisk
   # scripted fdisk command to create a gpt disk image and partition
-  # write the partition into the disk image at the correct location
+	sfdisk $@ < layout.sfdisk
+  # use a separate script run as root (to mount loopback devices and so on)
+  # to actually construct the disk image
 	sudo ./prepare-disk-image.sh
 
 .PHONY: clean
 clean:
 	-rm *.img *.o *.EFI
 
+# constructs the base (empty) disk image
 base-$(DISK).img:
 	dd if=/dev/zero of=$@ bs=1k count=$(DISKSIZE)
 
-tetris.efi: tetris.so
+# convert ELF shared object file into an EFI PE file
+%.efi: %.so
 	objcopy -j .text -j .sdata -j .data \
   -j .dynamic -j .dynsym  -j .rel \
   -j .rela -j .reloc -j .eh_frame \
   --target=efi-app-x86_64 $^ $@
 
-tetris.so: hello.o
+tetris.so: hello.o screen.o tetris.o rng.o
 	$(LD) -o $@ $(EFI_CRT_OBJ) $^ $(EFI_LDFLAGS) -lefi -lgnuefi
 
-hello.o: hello.c
+%.o: %.c
 	$(CC) $(EFI_CFLAGS) -c -o $@ $^
 
 .PHONY: run
