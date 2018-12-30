@@ -1,5 +1,6 @@
 *.efi
 *.img
 *.o
+*.so
 /ovmf/
 /mnt/
