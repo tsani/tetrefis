@@ -19,11 +19,7 @@ typedef struct bgr {
   UINT8 unused;
 } bgr;
 
-/**
- * \brief
- * The color white.
- */
-const bgr WHITE;
+const bgr WHITE, RED, BLUE, GREEN, BLACK;
 
 /**
  * \brief

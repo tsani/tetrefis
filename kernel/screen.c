@@ -15,3 +15,31 @@ const bgr WHITE = {
   .red = 255,
   .unused = 0
 };
+
+const bgr RED = {
+  .blue = 0,
+  .green = 0,
+  .red = 255,
+  .unused = 0
+};
+
+const bgr BLUE = {
+  .blue = 255,
+  .green = 0,
+  .red = 0,
+  .unused = 0
+};
+
+const bgr GREEN = {
+  .blue = 0,
+  .green = 255,
+  .red = 0,
+  .unused = 0
+};
+
+const bgr BLACK = {
+  .blue = 0,
+  .green = 0,
+  .red = 0,
+  .unused = 0
+};

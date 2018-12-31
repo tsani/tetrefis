@@ -10,6 +10,8 @@ EFI_INCLUDES=\
 	-I/usr/include/efi/x86_64
 
 EFI_CFLAGS=\
+	-Wall \
+	-Werror \
 	-ffreestanding \
 	-fno-stack-protector \
 	-fpic \
@@ -62,7 +64,7 @@ base-$(DISK).img:
   -j .rela -j .reloc -j .eh_frame \
   --target=efi-app-x86_64 $^ $@
 
-tetris.so: hello.o screen.o tetris.o rng.o
+tetris.so: hello.o screen.o tetris.o rng.o time.o
 	$(LD) -o $@ $(EFI_CRT_OBJ) $^ $(EFI_LDFLAGS) -lefi -lgnuefi
 
 %.o: %.c

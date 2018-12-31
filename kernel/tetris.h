@@ -6,38 +6,33 @@
 
 #include "screen.h"
 #include "rng.h"
+#include "time.h"
 
 typedef UINT8 tile;
 
+// the size in bytes of the grid
 #define GRID_SIZE (GRID_W * GRID_H * sizeof(tile))
 
-tile const EMPTY = 0;
+tile const EMPTY;
 
 typedef struct game_state {
   LFB * const lfb;
   RNG * const rng;
+  timer timer;
   tile grid[GRID_H * GRID_W];
 } game_state;
 
-game_state make_initial_state(LFB * const lfb, RNG * const rng) {
-  game_state s = {
-    .lfb = lfb,
-    .rng = rng,
-  };
-  
-  for(int i = 0; i < GRID_W * GRID_H; i++) {
-    s.grid[i] = EMPTY;
-  }
-
-  return s;
-}
+game_state
+make_initial_state(int * const ok, LFB * const lfb, RNG * const rng);
 
 /**
  * \brief
  * Retrieves a reference to a particular tile, given its coordinats.
  */
-tile * ref_tile(game_state * const s, vec2 p);
+tile *
+ref_tile(game_state * const s, vec2 p);
 
-EFI_STATUS game(game_state * const s);
+int
+game(game_state * const s);
 
 #endif

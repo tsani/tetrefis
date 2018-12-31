@@ -85,6 +85,9 @@ load_rng(EFI_STATUS * status) {
   EFI_RNG_PROTOCOL *rngp;
   EFI_GUID rngp_guid = EFI_RNG_PROTOCOL_GUID;
   
+  // TODO fix RNG protocol loading by using openprotocol to open the RNG protocol on the EFI application handle.
+  // this means we need to get the image handle (by using some kind of service)
+  // it's not entirely clear how to use openprotocol; the docs are confusing
   
   if(EFI_ERROR(
        (*status =
@@ -110,20 +113,29 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
   InitializeLib(image_handle, system_table);
   Print(L"Welcome to tetrEFIs!\n");
 
-  LFB lfb = load_lfb(&status);
-  if(EFI_ERROR(status))
-    return status;
-
   RNG rng = load_rng(&status);
   if(EFI_ERROR(status))
     return status;
 
-  game_state s = make_initial_state(&lfb, &rng);
+  LFB lfb = load_lfb(&status);
+  if(EFI_ERROR(status))
+    return status;
+
+  fill_rect(
+    &lfb,
+    (rect) { .x = 0, .y = 0, .w = SCREEN_WIDTH, .h = SCREEN_HEIGHT },
+    BLUE);
+
+  int ok;
+  game_state s = make_initial_state(&ok, &lfb, &rng);
+  if(!ok)
+    return -1;
 
   // TODO disable the watchdog timer
 
   // not sure if RNG will continue to work after exiting boot services
   // (probably not)
   // ST->BootServices->ExitBootServices();
-  return game(&s);
+  game(&s);
+  return EFI_SUCCESS;
 }
