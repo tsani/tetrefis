@@ -3,18 +3,33 @@
 
 #include <efi.h>
 
+UINT32 const BSD_MODULUS;
+UINT32 const BSD_INCREMENT;
+UINT32 const BSD_MULTIPLIER;
+
 /**
  * \brief
- * Wraps an EFI RNG protocol.
+ * A linear congruential PRNG's parameters and state.
  */
 typedef struct RNG {
-  EFI_RNG_PROTOCOL * const protocol;
+  UINT32 const modulus;
+  UINT32 const increment;
+  UINT32 const multiplier;
+  UINT32 state;
 } RNG;
 
 /**
  * \brief
- * Gets one random byte.
+ * Construct a linear congruential PRNG.
  */
-UINT8 random_byte(RNG * const rng);
+RNG make_rng(UINT32 seed);
+
+/**
+ * \brief
+ * Gets one random UINT32 using the BSD algorithm.
+ * Note that the UINT32's MSB will always be zero, so in fact the number is in the range
+ * [0, 2^31).
+ */
+UINT32 next_uint32(RNG * const rng);
 
 #endif

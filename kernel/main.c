@@ -82,29 +82,17 @@ load_lfb(EFI_STATUS * status) {
 
 RNG
 load_rng(EFI_STATUS * status) {
-  EFI_RNG_PROTOCOL *rngp;
-  EFI_GUID rngp_guid = EFI_RNG_PROTOCOL_GUID;
-  
-  // TODO fix RNG protocol loading by using openprotocol to open the RNG protocol on the EFI application handle.
-  // this means we need to get the image handle (by using some kind of service)
-  // it's not entirely clear how to use openprotocol; the docs are confusing
-  
-  if(EFI_ERROR(
-       (*status =
-       ST->BootServices->LocateProtocol(
-         &rngp_guid,
-         NULL,
-         (void**)&rngp)))) {
-    Print(L"FATAL: failed to locate RNG protocol.\n");
+  // create the initial seed by using the time
+  EFI_TIME time;
+  if(EFI_ERROR((*status = RT->GetTime(&time, NULL))))
     return (RNG) {};
-  }
 
   *status = EFI_SUCCESS;
-  return (RNG) {
-    .protocol = rngp
-  };
+
+  UINT32 s = (time.Hour * 60 + time.Minute * 60) + time.Second;
+  return make_rng(s);
 }
- 
+
 EFI_STATUS
 efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 {
