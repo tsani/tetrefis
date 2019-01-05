@@ -41,8 +41,8 @@ EFI_LDFLAGS=\
 DISKSIZE=60000 # ~60 MiB
 
 # The complete disk image.
-$(DISK): tetris.efi base-$(DISK).img layout.sfdisk
-	cp -u base-$(DISK).img $@
+$(DISK): tetris.efi base-$(DISK) layout.sfdisk
+	cp -u base-$(DISK) $@
   # scripted fdisk command to create a gpt disk image and partition
 	sfdisk $@ < layout.sfdisk
   # use a separate script run as root (to mount loopback devices and so on)
@@ -51,10 +51,10 @@ $(DISK): tetris.efi base-$(DISK).img layout.sfdisk
 
 .PHONY: clean
 clean:
-	-rm *.img *.o *.EFI
+	-rm *.img *.o *.efi
 
 # constructs the base (empty) disk image
-base-$(DISK).img:
+base-$(DISK):
 	dd if=/dev/zero of=$@ bs=1k count=$(DISKSIZE)
 
 # convert ELF shared object file into an EFI PE file
@@ -64,7 +64,7 @@ base-$(DISK).img:
   -j .rela -j .reloc -j .eh_frame \
   --target=efi-app-x86_64 $^ $@
 
-tetris.so: main.o screen.o tetris.o rng.o time.o blocks.o
+tetris.so: main.o screen.o tetris.o rng.o time.o blocks.o basic_types.o
 	$(LD) -o $@ $(EFI_CRT_OBJ) $^ $(EFI_LDFLAGS) -lefi -lgnuefi
 
 %.o: %.c
