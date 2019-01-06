@@ -4,6 +4,7 @@
 #include <efi.h>
 #include <efilib.h>
 
+#include "config.h"
 #include "basic_types.h"
 
 #define SCREEN_WIDTH 640
@@ -33,23 +34,46 @@ const bgr WHITE, RED, BLUE, GREEN, BLACK;
  */
 #define BGR(b, g, r) (bgr) { .blue = (b), .green = (g), .red = (r), .unused = 0 }
 
+typedef struct mock_vram_t {
+  bgr data[SCREEN_WIDTH * SCREEN_HEIGHT];
+} mock_vram_t;
+
+#if MOCK_LFB
+mock_vram_t MOCK_VRAM;
+#endif
+
+mock_vram_t SCREEN_BUFFER;
+
 /**
  * \brief
  * The linear framebuffer and its associated metadata.
  */
 typedef struct LFB {
   bgr * const pixels;
+  bgr * const buffer;
   UINTN const width, height, pixels_per_scanline;
 } LFB;
 
-#define SET_PIXEL(lfb, x, y, color) (lfb)->pixels[(x) + (lfb)->width * (y)] = (color)
+#define SET_PIXEL_INTERNAL(lfb, x, y, color, member) (lfb)->member[(x) + (lfb)->width * (y)] = (color)
+#define SET_SCREEN_PIXEL(lfb, x, y, color) SET_PIXEL_INTERNAL(lfb, x, y, color, pixels) 
+#define SET_BUFFER_PIXEL(lfb, x, y, color) SET_PIXEL_INTERNAL(lfb, x, y, color, buffer)
 
+/**
+ * \brief
+ * Fills a rectangle in the buffer.
+ */
 void fill_rect(LFB * const lfb, rect rect, bgr color);
+
+/**
+ * \brief
+ * Copies the buffer into the real vram.
+ */
+void screen_buffer_copy(LFB * const lfb);
 
 /**
  * \brief
  * Clears the screen with a given color.
  */
-void lfb_clear(LFB * const lfb, bgr color);
+void screen_buffer_clear(LFB * const lfb, bgr color);
 
 #endif

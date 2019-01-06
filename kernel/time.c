@@ -26,6 +26,7 @@ int await_timer(timer * const timer) {
   // 10000 is the number of times 100ns fits into 1ms.
   // SetTimer expects a time in units of 100ns bundles.
   // wtf.
+  // Correction: an extra factor of 100 was added by experiment.
   if(EFI_ERROR(
        (status =
         BS->SetTimer(

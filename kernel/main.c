@@ -42,6 +42,28 @@ find_and_set_video_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL * const gop) {
   return EFI_NOT_FOUND;
 }
 
+#if MOCK_LFB
+
+/**
+ * \brief
+ * Loads an LFB that just does draws into memory and doesn't set the
+ * video mode.
+ * This can be used for debugging, as Print and so on will still work.
+ */
+LFB
+load_lfb(EFI_STATUS * status) {
+  *status = EFI_SUCCESS;
+  return (LFB) {
+    .pixels = MOCK_VRAM.data,
+    .buffer = SCREEN_BUFFER.data,
+    .width = SCREEN_WIDTH,
+    .height = SCREEN_HEIGHT,
+    .pixels_per_scanline = 1
+  };
+}
+
+#else
+
 /**
  * \brief
  * Prepares the linear frame buffer by finding the GOP and setting the
@@ -74,11 +96,14 @@ load_lfb(EFI_STATUS * status) {
   *status = EFI_SUCCESS;
   return (LFB) {
     .pixels = (bgr*) gop->Mode->FrameBufferBase,
+    .buffer = SCREEN_BUFFER.data,
     .width = gop->Mode->Info->HorizontalResolution,
     .height = gop->Mode->Info->VerticalResolution,
     .pixels_per_scanline = gop->Mode->Info->PixelsPerScanLine
   };
 }
+
+#endif
 
 RNG
 load_rng(EFI_STATUS * status) {

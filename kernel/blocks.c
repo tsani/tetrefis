@@ -61,9 +61,9 @@ tetromino_template const * const TETROMINOES[TETROMINO_COUNT] = {
 
 vec2 const PIVOT_OFFSET = { .x = 1, .y = 0 };
 
-vec2 tetro_index_to_grid_local(UINT8 index) {
+vec2 tetro_index_to_tetro_local(UINT8 index) {
   // p is the column-row representation (origin in top-left corner)
-  vec2 p =  { index % TETROMINO_WIDTH, index / TETROMINO_WIDTH };
+  vec2 p = { index % TETROMINO_WIDTH, index / TETROMINO_WIDTH };
   // convert to pivot at origin
   return vec2_add(p, vec2_flip(PIVOT_OFFSET));
 }

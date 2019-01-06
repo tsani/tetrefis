@@ -1,13 +1,14 @@
 #ifndef TETRIS_H
 #define TETRIS_H
 
-#define GRID_WIDTH 10
-#define GRID_HEIGHT 20
-
 #include "screen.h"
 #include "rng.h"
 #include "time.h"
 #include "blocks.h"
+
+#define GRID_WIDTH 10
+#define GRID_HEIGHT 20
+#define INITIAL_TICK_PERIOD 90
 
 ///// TYPES & CONSTANTS /////
 
@@ -73,6 +74,26 @@ typedef struct game_state {
    * The size of a tile in pixels.
    */
   vec2 const tile_size;
+
+  /**
+   * \brief
+   * Number of frames that elapse between ticks.
+   *
+   * The tick is when the tetromino falls down one block.
+   */
+  UINT8 tick_period;
+
+  /**
+   * \brief
+   * The frame number when the last tick occurred.
+   */
+  UINT32 last_tick;
+
+  /**
+   * \brief
+   * The number of rows eliminated by the player.
+   */
+  UINT32 eliminated_rows;
 } game_state;
 
 /**
