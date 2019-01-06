@@ -64,7 +64,7 @@ base-$(DISK):
   -j .rela -j .reloc -j .eh_frame \
   --target=efi-app-x86_64 $^ $@
 
-tetris.so: main.o screen.o tetris.o rng.o time.o blocks.o basic_types.o
+tetris.so: main.o screen.o tetris.o rng.o time.o blocks.o basic_types.o input.o
 	$(LD) -o $@ $(EFI_CRT_OBJ) $^ $(EFI_LDFLAGS) -lefi -lgnuefi
 
 %.o: %.c

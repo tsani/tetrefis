@@ -8,7 +8,13 @@ bgr const TETRO_COLOR = BGR(192, 96, 96);
 
 INT32 const TILE_WIDTH = 16, TILE_HEIGHT = 16;
 
+tile const EMPTY = 0, NONEMPTY = 1;
+
 ///// LOGIC /////
+
+vec2 grid_index_to_grid_local(vec2 grid_size, int i) {
+  return (vec2) { .x = i % grid_size.x, .y = i / grid_size.x };
+}
 
 /**
  * \brief
@@ -92,7 +98,12 @@ void next_tetromino(game_state * const s) {
 }
 
 game_state
-make_initial_state(int * const ok, LFB * const lfb, RNG * const rng) {
+make_initial_state(
+  int * const ok,
+  LFB * const lfb,
+  RNG * const rng,
+  input_manager_t * const input_manager) {
+  //
   int _ok;
   
   game_state s = {
@@ -109,7 +120,8 @@ make_initial_state(int * const ok, LFB * const lfb, RNG * const rng) {
     },
     .tick_period = INITIAL_TICK_PERIOD,
     .last_tick = 0,
-    .eliminated_rows = 0
+    .eliminated_rows = 0,
+    .input_manager = input_manager
   };
 
   Print(
@@ -149,18 +161,48 @@ void freeze_tetromino(game_state * const s) {
     vec2 q = tetro_local_to_grid_local(&s->current_tetromino, p);
 
     // q is a valid position into the grid
-    *ref_tile(s, q) = 1;
+    *ref_tile(s, q) = NONEMPTY;
   }
 }
 
-void tick(game_state * const s) {
+/**
+ * \brief
+ * Freezes the current tetromino, spawns a new one, and checks for
+ * gameover.
+ *
+ * \returns
+ * - `0` if the game is over.
+ * - `1` if the game continues.
+ */
+int freeze_and_next_tetromino(game_state * const s) {
+  freeze_tetromino(s);
+  
+  // if right after spawning the next tetromino, it is invalid, then
+  // we've hit gameover
+  next_tetromino(s);
+  return is_tetromino_valid(s);
+}
+
+/**
+ * \brief
+ * Moves the tetromino down, checking for collisions and freezing it
+ * if necessary.
+ *
+ * This function also detects the game over condition, and returns
+ * false if the game is over.
+ */
+int tick(game_state * const s) {
   Print(L"DEBUG: tick!\n");
   s->current_tetromino.position.y++;
   if(!is_tetromino_valid(s)) {
+    Print(L"DEBUG: tetromino invalid; freezing and getting next\n");
     s->current_tetromino.position.y--;
-    freeze_tetromino(s);
-    next_tetromino(s);
+    if(!freeze_and_next_tetromino(s))
+      return 0;
   }
+
+  s->last_tick = s->frame_number;
+  return 1;
 }
 
 int should_tick(game_state * const s) {
@@ -201,24 +243,115 @@ void check_full_rows(game_state * const s) {
   }
 }
 
-int update(game_state * const s, int * const redraw) {
-  s->frame_number++;
-  
-  *redraw = 0;
-  
-  if(should_tick(s)) {
-    tick(s);
-    *redraw = 1;
+int on_move_left(game_state * const s) {
+  s->current_tetromino.position.x--;
+  if(!is_tetromino_valid(s))
+    s->current_tetromino.position.x++;
+  return 1;
+}
+
+int on_move_right(game_state * const s) {
+  s->current_tetromino.position.x++;
+  if(!is_tetromino_valid(s))
+    s->current_tetromino.position.x--;
+  return 1;
+}
+
+int on_rotate_ccw(game_state * const s) {
+  rotation r = s->current_tetromino.rotation;
+  s->current_tetromino.rotation = rot_inc(s->current_tetromino.rotation);
+  if(!is_tetromino_valid(s))
+    s->current_tetromino.rotation = r;
+  return 1;
+}
+
+int on_rotate_cw(game_state * const s) {
+  rotation r = s->current_tetromino.rotation;
+  s->current_tetromino.rotation = rot_dec(s->current_tetromino.rotation);
+  if(!is_tetromino_valid(s))
+    s->current_tetromino.rotation = r;
+  return 1;
+}
+
+int on_fall(game_state * const s) {
+  while(is_tetromino_valid(s)) {
+    s->current_tetromino.position.y++;
+  }
+  s->current_tetromino.position.y--;
+  return freeze_and_next_tetromino(s);
+}
+
+int on_quit(game_state * const s) {
+  return 0;
+}
+
+int on_unknown(game_state * const s) {
+  return 1;
+}
+
+/**
+ * \brief
+ * Type of a function that handles an input key.
+ *
+ * The returned integer indicates whether the game continues:
+ * - `0` indicates the game is over.
+ * - `1` indicates the game continues.
+ */
+typedef int (*input_handler)(game_state * const s);
+
+/**
+ * \brief
+ * Table of function pointers that handle the input keys, precisely in
+ * the enum order of `INPUT_KEY`, so we can use the enum values as
+ * indices.
+ */
+input_handler input_handlers[INPUT_KEY_MAX] = {
+  on_move_left,
+  on_move_right,
+  on_rotate_ccw,
+  on_rotate_cw,
+  on_fall,
+  on_quit,
+  on_unknown
+};
+
+int handle_input(game_state * const s, int * const redraw) {
+  INPUT_KEY key;
+  READ_INPUT_KEY_STATUS status;
+  // keep processing inputs until we run out or hit an error
+  // for each input, invoke its appropriate handler and eager-exit if
+  // it indicates game over.
+  while(INPUT_KEY_SUCCESS == (status = read_input_key(s->input_manager, &key))) {
+    Print(L"DEBUG: handling input %d\n", key);
+    if(!input_handlers[key](s)) {
+      Print(L"DEBUG: handle_input gameover detected\n");
+      return 0;
+    }
+    else
+      *redraw = 1;
   }
 
-  check_full_rows(s);
+  if(status == INPUT_KEY_ERROR) {
+    Print(L"ERROR: failed to read input\n");
+    return 0;
+  }
 
-  // TODO:
-  // * handle inputs
-  // * check frame_number to move tetromino down
-  //   -> handle collision with dead tiles & bounds
-  //      -> freezing tiles
-  //   -> check for full rows & eliminate
+  return 1;
+}
+
+int update(game_state * const s, int * const redraw) {
+  s->frame_number++;
+
+  if(!handle_input(s, redraw))
+    return 0;
+  
+  if(should_tick(s)) {
+    if(!tick(s))
+      return 0;
+
+    check_full_rows(s);
+    *redraw = 1;
+  }
   
   return 1;
 }
@@ -245,28 +378,29 @@ void draw_tetromino(game_state * const s) {
   Print(L"DEBUG: drawing tetromino\n");
   for(UINT8 i = 0; i < TETROMINO_GRID_LENGTH; i++) {
     if(!s->current_tetromino.template->data[i]) {
-      Print(L"DEBUG: skipping component %d\n", i);
+      // Print(L"DEBUG: skipping component %d\n", i);
       continue;
     }
-    else
-      Print(L"DEBUG: drawing component %d\n", i);
+    else {
+      // Print(L"DEBUG: drawing component %d\n", i);
+    }
 
     vec2 p = tetro_index_to_tetro_local(i);
 
-    Print(
-      L"DEBUG: converted index %d to local position (%d, %d)\n",
-      i,
-      p.x,
-      p.y);
+    // Print(
+    //   L"DEBUG: converted index %d to local position (%d, %d)\n",
+    //   i,
+    //   p.x,
+    //   p.y);
 
     vec2 q = tetro_local_to_grid_local(&s->current_tetromino, p);
 
-    Print(
-      L"DEBUG: converted local position (%d, %d) to grid position (%d, %d)\n",
-      p.x,
-      p.y,
-      q.x,
-      q.y);
+    // Print(
+    //   L"DEBUG: converted local position (%d, %d) to grid position (%d, %d)\n",
+    //   p.x,
+    //   p.y,
+    //   q.x,
+    //   q.y);
 
     draw_tile(s, q, TETRO_COLOR);
   }
@@ -274,10 +408,14 @@ void draw_tetromino(game_state * const s) {
 
 void draw_dead_tiles(game_state * const s) {
   for(int i = 0; i < s->grid_size.x * s->grid_size.y; i++) {
-    if(!s->grid[i])
+    if(s->grid[i] == EMPTY)
       continue;
+    else {
+      // Print(L"DEBUG: drawing dead tile at index %d\n", i);
+    }
 
-    vec2 p = grid_index_to_grid_local(i);
+    vec2 p = grid_index_to_grid_local(s->grid_size, i);
+    // Print(L"DEBUG: %d = (%d, %d)\n", i, p.x, p.y);
     draw_tile(s, p, DEAD_COLOR);
   }
 }

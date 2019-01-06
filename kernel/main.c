@@ -1,122 +1,7 @@
 #include <efi.h>
 #include <efilib.h>
 
-#include "screen.h"
 #include "tetris.h"
-
-// void await_key() {
-//   EFI_STATUS status;
-//   EFI_INPUT_KEY key;
-//   while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY) ;
-// }
-
-int
-mode_is_suitable(EFI_GRAPHICS_OUTPUT_MODE_INFORMATION const * const info) {
-  UINTN h = info->VerticalResolution;
-  UINTN w = info->HorizontalResolution;
-  Print(L"Trying %dx%d\n", w, h);
-  return w == 640 && h == 480 &&
-    info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor;
-}
-
-EFI_STATUS
-find_and_set_video_mode(EFI_GRAPHICS_OUTPUT_PROTOCOL * const gop) {
-  EFI_STATUS status;
-  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
-  UINTN info_size;
-
-  // enumerate available video modes
-  for(int mode_i = 0; mode_i < gop->Mode->MaxMode; mode_i++) {
-    if(EFI_ERROR(
-         (status =
-          gop->QueryMode(gop, mode_i, &info_size, &info))))
-      return status;
-    
-    if(!mode_is_suitable(info)) {
-      continue;
-    }
-
-    return gop->SetMode(gop, mode_i);
-  }
-
-  return EFI_NOT_FOUND;
-}
-
-#if MOCK_LFB
-
-/**
- * \brief
- * Loads an LFB that just does draws into memory and doesn't set the
- * video mode.
- * This can be used for debugging, as Print and so on will still work.
- */
-LFB
-load_lfb(EFI_STATUS * status) {
-  *status = EFI_SUCCESS;
-  return (LFB) {
-    .pixels = MOCK_VRAM.data,
-    .buffer = SCREEN_BUFFER.data,
-    .width = SCREEN_WIDTH,
-    .height = SCREEN_HEIGHT,
-    .pixels_per_scanline = 1
-  };
-}
-
-#else
-
-/**
- * \brief
- * Prepares the linear frame buffer by finding the GOP and setting the
- * video mode.
- *
- * Unconditionally sets *_status. The return value is undefined if
- * EFI_ERROR(*_status) is true.
- */
-LFB
-load_lfb(EFI_STATUS * status) {
-  EFI_GUID gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-  EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
-
-  if(EFI_ERROR(
-       (*status =
-       ST->BootServices->LocateProtocol(
-         &gop_guid,
-         NULL,
-         (void**)&gop)))) {
-    Print(L"FATAL: failed to locate GOP.\n");
-    return (LFB) {};
-  }
-     
-  Print(L"Framebuffer base is at %lx\n", gop->Mode->FrameBufferBase);
-  Print(L"Finding a suitable video mode; preferred resolution: 640x480.\n");
-
-  if(EFI_ERROR((*status = find_and_set_video_mode(gop))))
-    return (LFB) {};
-
-  *status = EFI_SUCCESS;
-  return (LFB) {
-    .pixels = (bgr*) gop->Mode->FrameBufferBase,
-    .buffer = SCREEN_BUFFER.data,
-    .width = gop->Mode->Info->HorizontalResolution,
-    .height = gop->Mode->Info->VerticalResolution,
-    .pixels_per_scanline = gop->Mode->Info->PixelsPerScanLine
-  };
-}
-
-#endif
-
-RNG
-load_rng(EFI_STATUS * status) {
-  // create the initial seed by using the time
-  EFI_TIME time;
-  if(EFI_ERROR((*status = RT->GetTime(&time, NULL))))
-    return (RNG) {};
-
-  *status = EFI_SUCCESS;
-
-  UINT32 s = (time.Hour * 60 + time.Minute * 60) + time.Second;
-  return make_rng(s);
-}
 
 EFI_STATUS
 efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
@@ -134,13 +19,20 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
   if(EFI_ERROR(status))
     return status;
 
-  fill_rect(
-    &lfb,
-    (rect) { .x = 0, .y = 0, .w = SCREEN_WIDTH, .h = SCREEN_HEIGHT },
-    BLUE);
+  input_manager_t input_manager = load_input_manager(&status);
+  if(EFI_ERROR(status)) {
+    return status;
+  }
+
+  Print(L"DEBUG: loaded all services\n");
+
+  // fill_rect(
+  //   &lfb,
+  //   (rect) { .x = 0, .y = 0, .w = SCREEN_WIDTH, .h = SCREEN_HEIGHT },
+  //   BLACK);
 
   int ok;
-  game_state s = make_initial_state(&ok, &lfb, &rng);
+  game_state s = make_initial_state(&ok, &lfb, &rng, &input_manager);
   if(!ok)
     return -1;
 

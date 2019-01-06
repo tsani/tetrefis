@@ -5,10 +5,11 @@
 #include "rng.h"
 #include "time.h"
 #include "blocks.h"
+#include "input.h"
 
 #define GRID_WIDTH 10
 #define GRID_HEIGHT 20
-#define INITIAL_TICK_PERIOD 90
+#define INITIAL_TICK_PERIOD 10
 
 ///// TYPES & CONSTANTS /////
 
@@ -26,6 +27,12 @@ typedef struct game_state {
    * The random number generator used to get new tetrominos.
    */
   RNG * const rng;
+
+  /**
+   * \brief
+   * Service to read keystrokes.
+   */
+  input_manager_t * const input_manager;
 
   /**
    * \brief
@@ -100,7 +107,7 @@ typedef struct game_state {
  * \brief
  * Indicates that the grid tile is empty.
  */
-tile const EMPTY;
+tile const EMPTY, NONEMPTY;
 
 /**
  * \brief
@@ -130,14 +137,18 @@ bgr const TETRO_COLOR;
  * `ok`.
  */
 game_state
-make_initial_state(int * const ok, LFB * const lfb, RNG * const rng);
+make_initial_state(
+  int * const ok,
+  LFB * const lfb,
+  RNG * const rng,
+  input_manager_t * const input_manager);
 
 /**
  * \brief
  * Converts an index into the tile grid into a 2d vector representing
  * that tile's local position in the grid.
  */
-vec2 grid_index_to_grid_local(int i);
+vec2 grid_index_to_grid_local(vec2 grid_size, int i);
 
 /**
  * \brief

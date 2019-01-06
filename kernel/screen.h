@@ -38,10 +38,6 @@ typedef struct mock_vram_t {
   bgr data[SCREEN_WIDTH * SCREEN_HEIGHT];
 } mock_vram_t;
 
-#if MOCK_LFB
-mock_vram_t MOCK_VRAM;
-#endif
-
 mock_vram_t SCREEN_BUFFER;
 
 /**
@@ -57,6 +53,8 @@ typedef struct LFB {
 #define SET_PIXEL_INTERNAL(lfb, x, y, color, member) (lfb)->member[(x) + (lfb)->width * (y)] = (color)
 #define SET_SCREEN_PIXEL(lfb, x, y, color) SET_PIXEL_INTERNAL(lfb, x, y, color, pixels) 
 #define SET_BUFFER_PIXEL(lfb, x, y, color) SET_PIXEL_INTERNAL(lfb, x, y, color, buffer)
+
+LFB load_lfb(EFI_STATUS * status);
 
 /**
  * \brief

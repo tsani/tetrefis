@@ -26,6 +26,12 @@ RNG make_rng(UINT32 seed);
 
 /**
  * \brief
+ * Constructs a linear congruential PRNG using current time as a seed.
+ */
+RNG load_rng(EFI_STATUS * status);
+
+/**
+ * \brief
  * Gets one random UINT32 using the BSD algorithm.
  * Note that the UINT32's MSB will always be zero, so in fact the number is in the range
  * [0, 2^31).
