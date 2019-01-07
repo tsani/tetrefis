@@ -11,6 +11,9 @@ bgr const DEAD_COLOR = BGR(128, 128, 128);
 // color of the player's tetromino
 bgr const TETRO_COLOR = BGR(192, 96, 96);
 
+// color of the boundary around the playfield
+bgr const BOUNDARY_COLOR = BGR(192, 192, 192);
+
 // dimensions of the tiles
 INT32 const TILE_WIDTH = 16, TILE_HEIGHT = 16;
 
@@ -432,6 +435,17 @@ void draw_tile(game_state * const s, vec2 pos, bgr color) {
     color);
 }
 
+void draw_boundary(game_state * const s) {
+  for(int y = 0; y < s->grid_size.y; y++) {
+    draw_tile(s, (vec2) { .x = -1, .y = y }, BOUNDARY_COLOR);
+    draw_tile(s, (vec2) { .x = s->grid_size.x, .y = y }, BOUNDARY_COLOR);
+  }
+
+  for(int x = -1; x < s->grid_size.x + 1; x++) {
+    draw_tile(s, (vec2) { .x = x, .y = s->grid_size.y }, BOUNDARY_COLOR);
+  }
+}
+
 void draw_tetromino(game_state * const s, tetromino const * const t) {
   Print(L"DEBUG: drawing tetromino\n");
   for(UINT8 i = 0; i < TETROMINO_GRID_LENGTH; i++) {
@@ -498,6 +512,7 @@ void draw(game_state * const s) {
   draw_tetromino(s, &t);
 
   draw_dead_tiles(s);
+  draw_boundary(s);
 
   // copy the buffer to the vram
   screen_buffer_copy(s->lfb);
