@@ -33,6 +33,9 @@ READ_INPUT_KEY_STATUS read_input_key(
   // otherwise a key was in fact read
 
   switch(data.ScanCode) {
+  case 0x02:
+    *key = MOVE_DOWN;
+    return INPUT_KEY_SUCCESS;
   case 0x03:
     *key = MOVE_RIGHT;
     return INPUT_KEY_SUCCESS;

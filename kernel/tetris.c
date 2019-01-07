@@ -2,16 +2,34 @@
 
 ///// DEFINITIONS /////
 
-int const FRAME_TIME = 15; // milliseconds
+// milliseconds, roughly
+int const FRAME_TIME = 10; 
+
+// color of dead tetrominos in the grid
 bgr const DEAD_COLOR = BGR(128, 128, 128);
+
+// color of the player's tetromino
 bgr const TETRO_COLOR = BGR(192, 96, 96);
 
+// dimensions of the tiles
 INT32 const TILE_WIDTH = 16, TILE_HEIGHT = 16;
 
+// empty tile and nonempty tile
 tile const EMPTY = 0, NONEMPTY = 1;
 
 ///// LOGIC /////
 
+UINT32 tick_period(game_state const * const s) {
+  return s->level >= LEVEL_MAX ? 1 : s->levels[s->level];
+}
+
+/**
+ * \brief
+ * Converts an index into the grid array into a grid-local tile
+ * coordinate.
+ *
+ * This is the inverse of `tile_index`.
+ */
 vec2 grid_index_to_grid_local(vec2 grid_size, int i) {
   return (vec2) { .x = i % grid_size.x, .y = i / grid_size.x };
 }
@@ -19,9 +37,11 @@ vec2 grid_index_to_grid_local(vec2 grid_size, int i) {
 /**
  * \brief
  * Converts a grid-local tile coordinate into a grid array index.
+ *
+ * This is the inverse of `grid_index_to_grid_local`.
  */
-int tile_index(game_state const * const s, vec2 p) {
-  return p.x + p.y * s->grid_size.x;
+int tile_index(vec2 grid_size, vec2 p) {
+  return p.x + p.y * grid_size.x;
 }
 
 /**
@@ -29,11 +49,15 @@ int tile_index(game_state const * const s, vec2 p) {
  * Reads tile data from the grid at the given position.
  */
 tile get_tile(game_state const * const s, vec2 p) {
-  return s->grid[tile_index(s, p)];
+  return s->grid[tile_index(s->grid_size, p)];
 }
 
+/**
+ * \brief
+ * Obtains a reference to a tile in the grid at a given position.
+ */
 tile * ref_tile(game_state * const s, vec2 p) {
-  return &s->grid[tile_index(s, p)];
+  return &s->grid[tile_index(s->grid_size, p)];
 }
 
 /**
@@ -114,14 +138,28 @@ make_initial_state(
     .frame_number = 0,
     .tile_size = (vec2) { .x = TILE_WIDTH, .y = TILE_HEIGHT },
     .grid_size = (vec2) { .x = GRID_WIDTH, .y = GRID_HEIGHT },
+    // center the grid
     .grid_origin = (vec2) {
       .x = lfb->width / 2 - GRID_WIDTH * TILE_WIDTH / 2,
       .y = lfb->height / 2 - GRID_HEIGHT * TILE_HEIGHT / 2
     },
-    .tick_period = INITIAL_TICK_PERIOD,
     .last_tick = 0,
     .eliminated_rows = 0,
-    .input_manager = input_manager
+    .input_manager = input_manager,
+    .score_table = {
+      0, // no rows cleared -> no points added
+      SCORE_1, // see config.h
+      SCORE_2,
+      SCORE_3,
+      SCORE_4
+    },
+    .level = 0,
+    .levels = {
+      90, 80, 70, 60, 50,
+      45, 40, 35, 30, 25,
+      20, 18, 16, 14, 12,
+      10,  8,  5,  3,  2
+    }
   };
 
   Print(
@@ -140,6 +178,7 @@ make_initial_state(
 
   *ok = 1;
 
+  // skip the first two (bogus / default) values for the tetrominoes
   next_tetromino(&s);
   next_tetromino(&s);
 
@@ -206,7 +245,7 @@ int tick(game_state * const s) {
 }
 
 int should_tick(game_state * const s) {
-  return s->frame_number - s->last_tick >= s->tick_period;
+  return s->frame_number - s->last_tick >= tick_period(s);
 }
 
 /**
@@ -223,8 +262,16 @@ void eliminate_row(game_state * const s, int y) {
   }
 }
 
+void update_level(game_state * const s) {
+  s->level = s->eliminated_rows / LEVEL_BOUNDARY;
+  if(s->level >= LEVEL_MAX)
+    s->level = LEVEL_MAX;
+}
+
 void check_full_rows(game_state * const s) {
   Print(L"DEBUG: check_full_rows\n");
+
+  int eliminated_rows = 0;
 
   for(int y = 0; y < s->grid_size.y; y++) {
     int ok = 1;
@@ -238,9 +285,12 @@ void check_full_rows(game_state * const s) {
     if(!ok)
       continue;
 
-    s->eliminated_rows++;
+    eliminated_rows++;
     eliminate_row(s, y);
   }
+
+  s->eliminated_rows += eliminated_rows;
+  s->score += s->score_table[eliminated_rows];
 }
 
 int on_move_left(game_state * const s) {
@@ -278,7 +328,10 @@ int on_fall(game_state * const s) {
     s->current_tetromino.position.y++;
   }
   s->current_tetromino.position.y--;
-  return freeze_and_next_tetromino(s);
+  if(!freeze_and_next_tetromino(s))
+    return 0;
+  check_full_rows(s);
+  return 1;
 }
 
 int on_quit(game_state * const s) {
@@ -306,6 +359,9 @@ typedef int (*input_handler)(game_state * const s);
  * indices.
  */
 input_handler input_handlers[INPUT_KEY_MAX] = {
+  // conveniently, tick has the right type for an input handler,
+  // so we use it directly to handle the down input
+  tick, 
   on_move_left,
   on_move_right,
   on_rotate_ccw,
@@ -353,6 +409,8 @@ int update(game_state * const s, int * const redraw) {
     *redraw = 1;
   }
   
+  update_level(s);
+
   return 1;
 }
 
@@ -374,10 +432,10 @@ void draw_tile(game_state * const s, vec2 pos, bgr color) {
     color);
 }
 
-void draw_tetromino(game_state * const s) {
+void draw_tetromino(game_state * const s, tetromino const * const t) {
   Print(L"DEBUG: drawing tetromino\n");
   for(UINT8 i = 0; i < TETROMINO_GRID_LENGTH; i++) {
-    if(!s->current_tetromino.template->data[i]) {
+    if(!t->template->data[i]) {
       // Print(L"DEBUG: skipping component %d\n", i);
       continue;
     }
@@ -393,7 +451,7 @@ void draw_tetromino(game_state * const s) {
     //   p.x,
     //   p.y);
 
-    vec2 q = tetro_local_to_grid_local(&s->current_tetromino, p);
+    vec2 q = tetro_local_to_grid_local(t, p);
 
     // Print(
     //   L"DEBUG: converted local position (%d, %d) to grid position (%d, %d)\n",
@@ -421,13 +479,24 @@ void draw_dead_tiles(game_state * const s) {
 }
 
 void draw(game_state * const s) {
+  // used to draw the next tetromino
+  static tetromino t = {
+    .template = NULL,
+    .position = (vec2) { .x = 0, .y = 0 },
+    .rotation = ZERO_ROTATION
+  };
+
   // clear the screen buffer to black
   screen_buffer_clear(s->lfb, BLACK);
 
   // do all draws to the buffer
 
-  // draw_tile(s, (vec2) { 0, 0 }, RED); // DEBUG
-  draw_tetromino(s);
+  draw_tetromino(s, &s->current_tetromino);
+
+  t.position.x = s->grid_size.x + 4;
+  t.template = s->next_tetromino;
+  draw_tetromino(s, &t);
+
   draw_dead_tiles(s);
 
   // copy the buffer to the vram

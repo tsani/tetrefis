@@ -9,7 +9,7 @@
  */
 typedef INT8 rotation;
 
-rotation const ZERO_ROTATION;
+#define ZERO_ROTATION ((rotation)0)
 
 /**
  * \brief

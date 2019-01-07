@@ -7,11 +7,9 @@
 #include "blocks.h"
 #include "input.h"
 
-#define GRID_WIDTH 10
-#define GRID_HEIGHT 20
-#define INITIAL_TICK_PERIOD 10
-
 ///// TYPES & CONSTANTS /////
+
+#define LEVEL_MAX 20
 
 typedef UINT8 tile;
 
@@ -84,14 +82,6 @@ typedef struct game_state {
 
   /**
    * \brief
-   * Number of frames that elapse between ticks.
-   *
-   * The tick is when the tetromino falls down one block.
-   */
-  UINT8 tick_period;
-
-  /**
-   * \brief
    * The frame number when the last tick occurred.
    */
   UINT32 last_tick;
@@ -101,6 +91,31 @@ typedef struct game_state {
    * The number of rows eliminated by the player.
    */
   UINT32 eliminated_rows;
+
+  /**
+   * \brief
+   * Player score.
+   */
+  UINT32 score;
+
+  /**
+   * \brief
+   * Score values to add for different numbers of lines cleared.
+   */
+  score_delta const score_table[5];
+
+  /**
+   * \brief
+   * The current level.
+   * This is an index into the `levels` array.
+   */
+  UINT8 level;
+
+  /**
+   * \brief
+   * This is all the difficulty levels, expressed as tick periods.
+   */
+  UINT8 const levels[LEVEL_MAX];
 } game_state;
 
 /**
@@ -108,12 +123,6 @@ typedef struct game_state {
  * Indicates that the grid tile is empty.
  */
 tile const EMPTY, NONEMPTY;
-
-/**
- * \brief
- * Indicates that the grid tile is nonempty.
- */
-tile const DEAD;
 
 /**
  * \brief
@@ -134,7 +143,7 @@ bgr const TETRO_COLOR;
  * Constructs an initial state for the game.
  *
  * Returns whether the initialization succeeded in the out-parameter
- * `ok`.
+ * `ok`. The return value is undefined if `*ok` isn't true.
  */
 game_state
 make_initial_state(
@@ -142,20 +151,6 @@ make_initial_state(
   LFB * const lfb,
   RNG * const rng,
   input_manager_t * const input_manager);
-
-/**
- * \brief
- * Converts an index into the tile grid into a 2d vector representing
- * that tile's local position in the grid.
- */
-vec2 grid_index_to_grid_local(vec2 grid_size, int i);
-
-/**
- * \brief
- * Retrieves a reference to a particular tile, given its coordinats.
- */
-tile *
-ref_tile(game_state * const s, vec2 p);
 
 /**
  * \brief

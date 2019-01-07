@@ -28,7 +28,8 @@ EFI_LDS=/usr/lib/elf_x86_64_efi.lds
 # - We don't combine relocations
 # - We use the custom ld script provided by gnu-efi
 # - we build a shared object file
-# - I don't really understand -Bsymbolic
+# - I don't really understand -Bsymbolic, but if I remove it then ld
+#   complains about failing to process some relocations
 EFI_LDFLAGS=\
 	-nostdlib \
 	-znocombreloc \

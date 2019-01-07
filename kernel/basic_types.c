@@ -1,7 +1,5 @@
 #include "basic_types.h"
 
-rotation const ZERO_ROTATION = 0;
-
 vec2 vec2_add(vec2 p, vec2 q) {
   return (vec2) { p.x + q.x, p.y + q.y };
 }
