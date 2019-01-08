@@ -28,6 +28,17 @@ UINT32 tick_period(game_state const * const s) {
 
 /**
  * \brief
+ * Converts a grid-local position to an absolute screen position.
+ */
+vec2 grid_local_to_absolute(game_state const * const s, vec2 p) {
+  return (vec2) {
+    s->grid_origin.x + s->tile_size.x * p.x,
+    s->grid_origin.y + s->tile_size.y * p.y
+  };
+}
+
+/**
+ * \brief
  * Converts an index into the grid array into a grid-local tile
  * coordinate.
  *
@@ -162,6 +173,12 @@ make_initial_state(
       45, 40, 35, 30, 25,
       20, 18, 16, 14, 12,
       10,  8,  5,  3,  2
+    },
+    .renderer_info = {
+      .text_scale = 1,
+      .color = WHITE,
+      .char_skip = 1,
+      .font = &default_font
     }
   };
 
@@ -421,17 +438,56 @@ int update(game_state * const s, int * const redraw) {
 
 /**
  * \brief
+ * Draws a string at the specified location using the settings of the
+ * game_state.
+ */
+void draw_string(
+  game_state * const s,
+  vec2 const pos,
+  char const * const str,
+  UINT32 length) {
+  //
+  Print(L"DEBUG: drawing string\n", str);
+  bt_render_string(
+    s->lfb,
+    &s->renderer_info,
+    pos,
+    str,
+    length);
+}
+
+/**
+ * \brief
+ * Draws a string centered at the given position.
+ */
+void draw_string_centered(
+  game_state * const s,
+  vec2 const pos,
+  char const * const str,
+  UINT32 length) {
+  Print(L"DEBUG: drawing centered string\n");
+  bt_render_string_centered(
+    s->lfb,
+    &s->renderer_info,
+    pos,
+    str,
+    length);
+}
+
+/**
+ * \brief
  * Draws a tile at grid-local position `pos` with the given color.
  */
 void draw_tile(game_state * const s, vec2 pos, bgr color) {
   // convert grid-local position to screen position
-  pos = (vec2) { pos.x * s->tile_size.x, pos.y * s->tile_size.y };
+  pos = grid_local_to_absolute(s, pos);
+  // pos = (vec2) { pos.x * s->tile_size.x, pos.y * s->tile_size.y };
   // upgrade to rectangle
   rect r = { pos.x, pos.y, s->tile_size.x, s->tile_size.y };
   // fill the rectangle on screen
   fill_rect(
     s->lfb,
-    rect_add(r, s->grid_origin),
+    r,
     color);
 }
 
@@ -511,8 +567,25 @@ void draw(game_state * const s) {
   t.template = s->next_tetromino;
   draw_tetromino(s, &t);
 
+  vec2 p = t.position;
+  p.y--;
+  draw_string(
+    s,
+    grid_local_to_absolute(s, p),
+    "next",
+    4);
+
   draw_dead_tiles(s);
   draw_boundary(s);
+
+  static char const pangram[] =
+    "the quick brown fox jumps over the lazy dog";
+  draw_string_centered(
+    s,
+    (vec2) { s->lfb->width / 2, 50 },
+    pangram,
+    sizeof(pangram));
+    
 
   // copy the buffer to the vram
   screen_buffer_copy(s->lfb);

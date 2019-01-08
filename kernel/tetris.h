@@ -6,6 +6,7 @@
 #include "time.h"
 #include "blocks.h"
 #include "input.h"
+#include "text.h"
 
 ///// TYPES & CONSTANTS /////
 
@@ -116,6 +117,12 @@ typedef struct game_state {
    * This is all the difficulty levels, expressed as tick periods.
    */
   UINT8 const levels[LEVEL_MAX];
+
+  /**
+   * \brief
+   * Settings for rendering text.
+   */
+  bt_renderer_info const renderer_info;
 } game_state;
 
 /**
