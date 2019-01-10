@@ -2,5 +2,5 @@
 *.img
 *.o
 *.so
-/ovmf/
 /mnt/
+/doc/
