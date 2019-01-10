@@ -384,8 +384,8 @@ input_handler input_handlers[INPUT_KEY_MAX] = {
   tick,
   on_move_left,
   on_move_right,
-  on_rotate_ccw,
   on_rotate_cw,
+  on_rotate_ccw,
   on_fall,
   on_quit,
   on_unknown
