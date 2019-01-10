@@ -727,6 +727,20 @@ bt_char const bt_char_9 = {
   }
 };
 
+bt_char const bt_char_colon = {
+  .width = 1,
+  .height = 6,
+  .baseline = 5,
+  .data = {
+    n,
+    X,
+    n,
+    n,
+    X,
+    n
+  }
+};
+
 bt_char const bt_char_sp = {
   .width = 5,
   .height = 1,
@@ -797,7 +811,7 @@ bt_font const default_font = {
     &bt_char_7, // 7
     &bt_char_8, // 8
     &bt_char_9, // 9
-    NULL, // :
+    &bt_char_colon, // :
     NULL, // ;
     NULL, // <
     NULL, // =

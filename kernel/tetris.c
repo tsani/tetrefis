@@ -557,6 +557,28 @@ void draw_dead_tiles(game_state * const s) {
   }
 }
 
+static char const text_next[] = "next",
+  text_score[] = "score",
+  text_cleared[] = "cleared",
+  text_controls[] = "controls",
+  text_move_help[] = "move: arrow keys",
+  text_rotate_help[] = "rotate: z and x",
+  text_fall_help[] = "fall: down and space",
+  text_quit_help[] = "quit: q";
+
+typedef struct help_text {
+  UINT32 size;
+  char const * const text;
+} help_text;
+
+static help_text const help_entries[] = {
+  { .text = text_controls, .size = sizeof(text_controls) },
+  { .text = text_move_help, .size = sizeof(text_move_help) },
+  { .text = text_rotate_help, .size = sizeof(text_rotate_help) },
+  { .text = text_fall_help, .size = sizeof(text_fall_help) },
+  { .text = text_quit_help, .size = sizeof(text_quit_help) }
+};
+
 /**
  * \brief
  * Draws the things that never change:
@@ -575,16 +597,13 @@ void draw_static(game_state * const s) {
   draw_boundary(s);
 
   vec2 const p1 = { s->grid_size.x + 4, -1 };
-  static char const text_next[] = "next";
   draw_string(
     s,
     grid_local_to_absolute(s, p1),
     text_next,
     sizeof(text_next));
 
-
   vec2 const p2 = { s->grid_size.x + 4, 4 };
-  static char const text_score[] = "score";
   draw_string(
     s,
     grid_local_to_absolute(s, p2),
@@ -592,12 +611,25 @@ void draw_static(game_state * const s) {
     sizeof(text_score));
 
   vec2 const p3 = { s->grid_size.x + 4, 7 };
-  static char const text_lines[] = "cleared";
   draw_string(
     s,
     grid_local_to_absolute(s, p3),
-    text_lines,
-    sizeof(text_lines));
+    text_cleared,
+    sizeof(text_cleared));
+
+  INT32 y = 300;
+  INT32 y_space = 20;
+  INT32 const x = 50;
+
+  for(int i = 0; i < sizeof(help_entries) / sizeof(help_entries[0]); i++) {
+    draw_string(
+      s,
+      (vec2) { x, y },
+      help_entries[i].text,
+      help_entries[i].size);
+
+    y += y_space;
+  }
 }
 
 void draw(game_state * const s) {
