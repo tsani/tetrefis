@@ -5,9 +5,9 @@ OVMF=ovmf
 DISK=disk.img
 
 EFI_INCLUDES=\
-	-I/usr/include/efi \
-	-I/usr/include/efi/protocol \
-	-I/usr/include/efi/x86_64
+	-Ivendor/include/efi \
+	-Ivendor/include/efi/protocol \
+	-Ivendor/include/efi/x86_64
 
 EFI_CFLAGS=\
 	-Wall \
@@ -20,8 +20,8 @@ EFI_CFLAGS=\
 	-mno-red-zone \
 	$(EFI_INCLUDES)
 
-EFI_CRT_OBJ=/usr/lib/crt0-efi-x86_64.o
-EFI_LDS=/usr/lib/elf_x86_64_efi.lds
+EFI_CRT_OBJ=vendor/lib/crt0-efi-x86_64.o
+EFI_LDS=vendor/lib/elf_x86_64_efi.lds
 
 # linker flags for building EFI application:
 # - We don't link in the standard library
@@ -36,7 +36,7 @@ EFI_LDFLAGS=\
 	-T $(EFI_LDS) \
 	-shared \
 	-Bsymbolic \
-	-L/usr/lib
+	-Lvendor/lib
 
 # Sizes are in KiB
 DISKSIZE=60000 # ~60 MiB
