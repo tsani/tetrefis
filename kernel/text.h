@@ -158,4 +158,19 @@ measure_string_width(
   char const * const str,
   UINT32 length);
 
+/**
+ * \brief
+ * Converts the number to a string representation.
+ *
+ * The result is written *right-aligned* to the end of the destination
+ * string.
+ * If the string is not long enough (according to length) to represent
+ * the number, then 0 is returned. Otherwise 1 is returned.
+ */
+int
+uint32_to_str(
+  UINT32 num,
+  char * const dest,
+  UINT32 length);
+
 #endif

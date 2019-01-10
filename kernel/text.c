@@ -86,7 +86,7 @@ bt_render_string(
     }
 
     Print(L"DEBUG: found bt_char for '%c'\n", c);
-      
+
     // work out the position of the top-left corner of the character
     // the x coordinate is easy: it's x0
     // the y coordinate depends on the character's baseline
@@ -556,6 +556,177 @@ bt_char const bt_char_0 = {
   }
 };
 
+bt_char const bt_char_1 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    n, n, X, n, n,
+    n, X, X, n, n,
+    X, n, X, n, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    X, X, X, X, X
+  }
+};
+
+bt_char const bt_char_2 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    n, X, X, X, n,
+    X, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, X, n,
+    n, n, n, X, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, X, n, n, n,
+    X, n, n, n, n,
+    X, X, X, X, X
+  }
+};
+
+bt_char const bt_char_3 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    n, X, X, X, n,
+    X, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, X, X, X, n,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    X, n, n, n, X,
+    n, X, X, X, n
+  }
+};
+
+bt_char const bt_char_4 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    n, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, X, X, X, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X
+  }
+};
+
+bt_char const bt_char_5 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    X, X, X, X, X,
+    X, n, n, n, n,
+    X, n, n, n, n,
+    X, n, n, n, n,
+    X, n, n, n, n,
+    X, X, X, X, n,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    X, X, X, X, n,
+  }
+};
+
+bt_char const bt_char_6 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    n, n, n, X, n,
+    n, n, n, X, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, X, n, n, n,
+    n, X, X, X, n,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    n, X, X, X, n,
+  }
+};
+
+bt_char const bt_char_7 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    X, X, X, X, X,
+    n, n, n, n, X,
+    n, n, n, X, n,
+    n, n, n, X, n,
+    n, n, n, X, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, n, X, n, n,
+    n, X, n, n, n,
+    n, X, n, n, n,
+    n, X, n, n, n
+  }
+};
+
+bt_char const bt_char_8 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    n, X, X, X, n,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    n, X, X, X, n,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    n, X, X, X, n
+  }
+};
+
+bt_char const bt_char_9 = {
+  .width = 5,
+  .height = 11,
+  .baseline = 10,
+  .data = {
+    n, X, X, X, n,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    X, n, n, n, X,
+    n, X, X, X, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X,
+    n, n, n, n, X
+  }
+};
+
 bt_char const bt_char_sp = {
   .width = 5,
   .height = 1,
@@ -570,67 +741,67 @@ bt_font const default_font = {
   .characters = {
     NULL, // NUL
     NULL, // SOH
-    NULL, // STX 
+    NULL, // STX
     NULL, // ETX
-    NULL, // EOT 
+    NULL, // EOT
     NULL, // ENQ
-    NULL, // ACK 
+    NULL, // ACK
     NULL, // BEL
-    NULL, // BS  
+    NULL, // BS
     NULL, // HT
-    NULL, // LF  
+    NULL, // LF
     NULL, // VT
-    NULL, // FF  
+    NULL, // FF
     NULL, // CR
-    NULL, // SO  
+    NULL, // SO
     NULL, // SI
-    NULL, // DLE 
+    NULL, // DLE
     NULL, // DC1
-    NULL, // DC2 
+    NULL, // DC2
     NULL, // DC3
-    NULL, // DC4 
+    NULL, // DC4
     NULL, // NAK
-    NULL, // SYN 
+    NULL, // SYN
     NULL, // ETB
-    NULL, // CAN 
+    NULL, // CAN
     NULL, // EM
-    NULL, // SUB 
+    NULL, // SUB
     NULL, // ESC
-    NULL, // FS  
+    NULL, // FS
     NULL, // GS
-    NULL, // RS  
+    NULL, // RS
     NULL, // US
-    &bt_char_sp, // SPA 
+    &bt_char_sp, // SPA
     NULL, // !
-    NULL, // "   
+    NULL, // "
     NULL, // #
-    NULL, // $   
+    NULL, // $
     NULL, // %
-    NULL, // &   
+    NULL, // &
     NULL, // '
-    NULL, // (   
+    NULL, // (
     NULL, // )
-    NULL, // *   
+    NULL, // *
     NULL, // +
-    NULL, // ,   
+    NULL, // ,
     NULL, // -
-    NULL, // .   
+    NULL, // .
     NULL, // /
-    &bt_char_0, // 0   
-    NULL, // &bt_char_1, // 1
-    NULL, // &bt_char_2, // 2   
-    NULL, // &bt_char_3, // 3
-    NULL, // &bt_char_4, // 4   
-    NULL, // &bt_char_5, // 5
-    NULL, // &bt_char_6, // 6   
-    NULL, // &bt_char_7, // 7
-    NULL, // &bt_char_8, // 8   
-    NULL, // &bt_char_9, // 9
-    NULL, // :   
+    &bt_char_0, // 0
+    &bt_char_1, // 1
+    &bt_char_2, // 2
+    &bt_char_3, // 3
+    &bt_char_4, // 4
+    &bt_char_5, // 5
+    &bt_char_6, // 6
+    &bt_char_7, // 7
+    &bt_char_8, // 8
+    &bt_char_9, // 9
+    NULL, // :
     NULL, // ;
-    NULL, // <   
+    NULL, // <
     NULL, // =
-    NULL, // >   
+    NULL, // >
     NULL, // ?
     NULL, // @
     NULL, // A
@@ -647,30 +818,30 @@ bt_font const default_font = {
     NULL, // L
     NULL, // M
     NULL, // N
-    NULL, // O   
-    NULL, // P   
-    NULL, // Q   
-    NULL, // R   
-    NULL, // S   
-    NULL, // T   
-    NULL, // U   
-    NULL, // V   
-    NULL, // W   
-    NULL, // X   
-    NULL, // Y   
-    NULL, // Z   
-    NULL, // [   
+    NULL, // O
+    NULL, // P
+    NULL, // Q
+    NULL, // R
+    NULL, // S
+    NULL, // T
+    NULL, // U
+    NULL, // V
+    NULL, // W
+    NULL, // X
+    NULL, // Y
+    NULL, // Z
+    NULL, // [
     NULL, /* \\ */
-    NULL, // ]   
-    NULL, // ^   
-    NULL, // _   
-    NULL, // `   
-    &bt_char_a, // a   
-    &bt_char_b, // b   
-    &bt_char_c, // c   
-    &bt_char_d, // d   
-    &bt_char_e, // e   
-    &bt_char_f, // f   
+    NULL, // ]
+    NULL, // ^
+    NULL, // _
+    NULL, // `
+    &bt_char_a, // a
+    &bt_char_b, // b
+    &bt_char_c, // c
+    &bt_char_d, // d
+    &bt_char_e, // e
+    &bt_char_f, // f
     &bt_char_g, // g
     &bt_char_h, // h
     &bt_char_i, // i
@@ -699,3 +870,25 @@ bt_font const default_font = {
   }
 };
 
+int
+uint32_to_str(
+  UINT32 num,
+  char * const dest,
+  UINT32 length) {
+  //
+  if(length < 1)
+    return 0;
+
+  if(num == 0) {
+    dest[length - 1] = '0';
+    return 0;
+  }
+
+  for(int i = 0; i < length && num > 0; i++, num /= 10) {
+    UINT32 r = num % 10;
+    // ASCII offset to make number
+    dest[length - 1 - i] = (char)(r + 48);
+  }
+
+  return num == 0;
+}

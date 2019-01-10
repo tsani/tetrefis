@@ -3,7 +3,7 @@
 ///// DEFINITIONS /////
 
 // milliseconds, roughly
-int const FRAME_TIME = 10; 
+int const FRAME_TIME = 10;
 
 // color of dead tetrominos in the grid
 bgr const DEAD_COLOR = BGR(128, 128, 128);
@@ -123,7 +123,7 @@ int is_tetromino_valid(game_state const * const s) {
  * `next_tetromino`.
  */
 void next_tetromino(game_state * const s) {
-  // get a random index 
+  // get a random index
   UINT32 i = next_uint32(s->rng) % TETROMINO_COUNT;
   s->current_tetromino = (tetromino) {
     .template = s->next_tetromino,
@@ -143,7 +143,7 @@ make_initial_state(
   input_manager_t * const input_manager) {
   //
   int _ok;
-  
+
   game_state s = {
     .lfb = lfb,
     .rng = rng,
@@ -191,7 +191,7 @@ make_initial_state(
     *ok = _ok;
     return s;
   }
-  
+
   for(int i = 0; i < s.grid_size.x * s.grid_size.y; i++) {
     s.grid[i] = EMPTY;
   }
@@ -235,7 +235,7 @@ void freeze_tetromino(game_state * const s) {
  */
 int freeze_and_next_tetromino(game_state * const s) {
   freeze_tetromino(s);
-  
+
   // if right after spawning the next tetromino, it is invalid, then
   // we've hit gameover
   next_tetromino(s);
@@ -381,7 +381,7 @@ typedef int (*input_handler)(game_state * const s);
 input_handler input_handlers[INPUT_KEY_MAX] = {
   // conveniently, tick has the right type for an input handler,
   // so we use it directly to handle the down input
-  tick, 
+  tick,
   on_move_left,
   on_move_right,
   on_rotate_ccw,
@@ -420,7 +420,7 @@ int update(game_state * const s, int * const redraw) {
 
   if(!handle_input(s, redraw))
     return 0;
-  
+
   if(should_tick(s)) {
     if(!tick(s))
       return 0;
@@ -428,7 +428,7 @@ int update(game_state * const s, int * const redraw) {
     check_full_rows(s);
     *redraw = 1;
   }
-  
+
   update_level(s);
 
   return 1;
@@ -502,10 +502,18 @@ void draw_boundary(game_state * const s) {
   }
 }
 
-void draw_tetromino(game_state * const s, tetromino const * const t) {
+/**
+ * \brief
+ * Draws the given tetromino.
+ *
+ * The flag `black` controls whether the absent elements of the
+ * tetromino are drawn as black tiles.
+ */
+void draw_tetromino(game_state * const s, tetromino const * const t, int black) {
   Print(L"DEBUG: drawing tetromino\n");
   for(UINT8 i = 0; i < TETROMINO_GRID_LENGTH; i++) {
-    if(!t->template->data[i]) {
+    int has = t->template->data[i];
+    if(!has && !black) {
       // Print(L"DEBUG: skipping component %d\n", i);
       continue;
     }
@@ -530,22 +538,66 @@ void draw_tetromino(game_state * const s, tetromino const * const t) {
     //   q.x,
     //   q.y);
 
-    draw_tile(s, q, TETRO_COLOR);
+    draw_tile(
+      s,
+      q,
+      has ? TETRO_COLOR : BLACK);
   }
 }
 
 void draw_dead_tiles(game_state * const s) {
-  for(int i = 0; i < s->grid_size.x * s->grid_size.y; i++) {
-    if(s->grid[i] == EMPTY)
-      continue;
-    else {
-      // Print(L"DEBUG: drawing dead tile at index %d\n", i);
+  for(int i = 0; i < s->grid_size.x; i++) {
+    for(int j = 0; j < s->grid_size.y; j++) {
+      vec2 const p = { i, j };
+      draw_tile(
+        s,
+        p,
+        get_tile(s, p) == EMPTY ? BLACK : DEAD_COLOR);
     }
-
-    vec2 p = grid_index_to_grid_local(s->grid_size, i);
-    // Print(L"DEBUG: %d = (%d, %d)\n", i, p.x, p.y);
-    draw_tile(s, p, DEAD_COLOR);
   }
+}
+
+/**
+ * \brief
+ * Draws the things that never change:
+ * - text (besides score value)
+ * - grid boundary
+ */
+void draw_static(game_state * const s) {
+  static char const pangram[] =
+    "tetrefis";
+  draw_string_centered(
+    s,
+    (vec2) { s->lfb->width / 2, 50 },
+    pangram,
+    sizeof(pangram));
+
+  draw_boundary(s);
+
+  vec2 const p1 = { s->grid_size.x + 4, -1 };
+  static char const text_next[] = "next";
+  draw_string(
+    s,
+    grid_local_to_absolute(s, p1),
+    text_next,
+    sizeof(text_next));
+
+
+  vec2 const p2 = { s->grid_size.x + 4, 4 };
+  static char const text_score[] = "score";
+  draw_string(
+    s,
+    grid_local_to_absolute(s, p2),
+    text_score,
+    sizeof(text_score));
+
+  vec2 const p3 = { s->grid_size.x + 4, 7 };
+  static char const text_lines[] = "cleared";
+  draw_string(
+    s,
+    grid_local_to_absolute(s, p3),
+    text_lines,
+    sizeof(text_lines));
 }
 
 void draw(game_state * const s) {
@@ -557,35 +609,65 @@ void draw(game_state * const s) {
   };
 
   // clear the screen buffer to black
-  screen_buffer_clear(s->lfb, BLACK);
+  // screen_buffer_clear(s->lfb, BLACK);
 
   // do all draws to the buffer
 
-  draw_tetromino(s, &s->current_tetromino);
+  draw_dead_tiles(s);
+
+  draw_tetromino(s, &s->current_tetromino, 0);
 
   t.position.x = s->grid_size.x + 4;
   t.template = s->next_tetromino;
-  draw_tetromino(s, &t);
+  draw_tetromino(s, &t, 1);
 
-  vec2 p = t.position;
-  p.y--;
-  draw_string(
-    s,
-    grid_local_to_absolute(s, p),
-    "next",
-    4);
+  {
+    char text_score_value[] = "000000000";
+    uint32_to_str(
+      s->score,
+      text_score_value,
+      sizeof(text_score_value) - 1);
 
-  draw_dead_tiles(s);
-  draw_boundary(s);
+    vec2 p =
+      grid_local_to_absolute(
+        s,
+        (vec2) { s->grid_size.x + 4, 5 });
 
-  static char const pangram[] =
-    "the quick brown fox jumps over the lazy dog";
-  draw_string_centered(
-    s,
-    (vec2) { s->lfb->width / 2, 50 },
-    pangram,
-    sizeof(pangram));
-    
+    fill_rect(
+      s->lfb,
+      (rect) { p.x, p.y - 11, 57, 12 },
+      BLACK);
+
+    draw_string(
+      s,
+      p,
+      text_score_value,
+      sizeof(text_score_value));
+  }
+
+  {
+    char text_lines_value[] = "00000";
+    uint32_to_str(
+      s->eliminated_rows,
+      text_lines_value,
+      sizeof(text_lines_value) - 1);
+
+    vec2 p =
+      grid_local_to_absolute(
+        s,
+        (vec2) { s->grid_size.x + 4, 8 });
+
+    fill_rect(
+      s->lfb,
+      (rect) { p.x, p.y - 11, 32, 12 },
+      BLACK);
+
+    draw_string(
+      s,
+      p,
+      text_lines_value,
+      sizeof(text_lines_value));
+  }
 
   // copy the buffer to the vram
   screen_buffer_copy(s->lfb);
@@ -595,6 +677,11 @@ void draw(game_state * const s) {
 
 int game(game_state * const s) {
   int ok = 1, redraw = 0;
+
+  // draw the static screen elements before the loop to avoid checking
+  // whether we did it already
+  draw_static(s);
+
   while(ok) {
     ok = update(s, &redraw);
     if(redraw)
@@ -604,4 +691,3 @@ int game(game_state * const s) {
 
   return 1;
 }
-
