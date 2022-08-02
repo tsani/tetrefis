@@ -46,44 +46,6 @@ typedef struct bt_char {
  */
 UINT8 get_char_el(bt_char const * const c, vec2 p);
 
-// bt_char const bt_char_a;
-// bt_char const bt_char_b;
-// bt_char const bt_char_c;
-// bt_char const bt_char_d;
-// bt_char const bt_char_e;
-// bt_char const bt_char_f;
-// bt_char const bt_char_g;
-// bt_char const bt_char_h;
-// bt_char const bt_char_i;
-// bt_char const bt_char_j;
-// bt_char const bt_char_k;
-// bt_char const bt_char_l;
-// bt_char const bt_char_m;
-// bt_char const bt_char_n;
-// bt_char const bt_char_o;
-// bt_char const bt_char_p;
-// bt_char const bt_char_q;
-// bt_char const bt_char_r;
-// bt_char const bt_char_s;
-// bt_char const bt_char_t;
-// bt_char const bt_char_u;
-// bt_char const bt_char_v;
-// bt_char const bt_char_w;
-// bt_char const bt_char_x;
-// bt_char const bt_char_y;
-// bt_char const bt_char_z;
-// bt_char const bt_char_0;
-// bt_char const bt_char_1;
-// bt_char const bt_char_2;
-// bt_char const bt_char_3;
-// bt_char const bt_char_4;
-// bt_char const bt_char_5;
-// bt_char const bt_char_6;
-// bt_char const bt_char_7;
-// bt_char const bt_char_8;
-// bt_char const bt_char_9;
-// bt_char const bt_char_sp;
-
 /**
  * \brief
  * A dense mapping of ASCII code points to bt_char structures.
@@ -92,7 +54,7 @@ typedef struct bt_font {
   bt_char const * const characters[128];
 } bt_font;
 
-bt_font const default_font;
+extern bt_font const default_font;
 
 /**
  * \brief

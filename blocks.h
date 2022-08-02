@@ -27,10 +27,10 @@ typedef struct tetromino_template {
 #define TETROMINO_COUNT 7
 
 // the available tetrominoes
-tetromino_template const tetro_i, tetro_o, tetro_t, tetro_s, tetro_z, tetro_j, tetro_l;
+extern tetromino_template const tetro_i, tetro_o, tetro_t, tetro_s, tetro_z, tetro_j, tetro_l;
 
 // an array of pointers to the tetrominoes.
-tetromino_template const * const TETROMINOES[TETROMINO_COUNT];
+extern tetromino_template const * const TETROMINOES[TETROMINO_COUNT];
 
 /**
  * \brief

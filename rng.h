@@ -3,10 +3,6 @@
 
 #include <efi.h>
 
-UINT32 const BSD_MODULUS;
-UINT32 const BSD_INCREMENT;
-UINT32 const BSD_MULTIPLIER;
-
 /**
  * \brief
  * A linear congruential PRNG's parameters and state.

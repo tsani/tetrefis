@@ -129,19 +129,19 @@ typedef struct game_state {
  * \brief
  * Indicates that the grid tile is empty.
  */
-tile const EMPTY, NONEMPTY;
+extern tile const EMPTY, NONEMPTY;
 
 /**
  * \brief
  * The color for "dead" tiles in the grid.
  */
-bgr const DEAD_COLOR;
+extern bgr const DEAD_COLOR;
 
 /**
  * \brief
  * The color for components of active tetrominoes.
  */
-bgr const TETRO_COLOR;
+extern bgr const TETRO_COLOR;
 
 ///// FUNCTIONS /////
 

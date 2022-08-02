@@ -26,7 +26,7 @@ typedef struct bgr {
  * \brief
  * Some predetermined colors.
  */
-const bgr WHITE, RED, BLUE, GREEN, BLACK;
+extern const bgr WHITE, RED, BLUE, GREEN, BLACK;
 
 /**
  * \brief
@@ -38,7 +38,7 @@ typedef struct mock_vram_t {
   bgr data[SCREEN_WIDTH * SCREEN_HEIGHT];
 } mock_vram_t;
 
-mock_vram_t SCREEN_BUFFER;
+extern mock_vram_t SCREEN_BUFFER;
 
 /**
  * \brief
